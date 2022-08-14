@@ -56,26 +56,26 @@ contract FlashloanArbitrage {
     /// @param amount0 amount of tokens to borrow
     /// @param token0 address of token to be borrowed
     /// @param token1 address of token to receive profits in
-    /// @param sRouter source router address
-    /// @param tRouter target router address
-    /// @param sFactory source factory address
+    /// @param sourceRouter source router address
+    /// @param targetRouter target router address
+    /// @param sourceFactory source factory address
     function initArbitrage(
         uint256 amount0,
         address token0, 
         address token1, 
-        address sRouter,
-        address tRouter,
-        address sFactory
+        address sourceRouter,
+        address targetRouter,
+        address sourceFactory
     ) external onlyOwner {
         require(amount0 > 0, "Incorrect borrow amount");
-        address pairAddress = IUniswapV2Factory(sFactory).getPair(token0, token1);
+        address pairAddress = IUniswapV2Factory(sourceFactory).getPair(token0, token1);
         require(pairAddress != address(0), 'Pair not found');
 
         IUniswapV2Pair(pairAddress).swap(
             amount0,
             0,
             address(this),
-            abi.encode(sRouter, tRouter)
+            abi.encode(sourceRouter, targetRouter)
         );
     }
 
