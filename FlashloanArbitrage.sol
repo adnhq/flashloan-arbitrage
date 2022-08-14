@@ -1,8 +1,4 @@
 
-// File: interfaces/IERC20.sol
-
-
-
 pragma solidity >=0.6.2 <0.8.0;
 
 interface IERC20 {
@@ -10,19 +6,11 @@ interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
-// File: interfaces/IUniswapV2Factory.sol
-
-
-
 pragma solidity >=0.5.0;
 
 interface IUniswapV2Factory {
   function getPair(address tokenA, address tokenB) external view returns (address pair);
 }
-
-// File: interfaces/IUniswapV2Pair.sol
-
-
 
 pragma solidity >=0.5.0;
 
@@ -33,10 +21,6 @@ interface IUniswapV2Pair {
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
 }
 
-// File: interfaces/IUniswapV2Router.sol
-
-
-
 pragma solidity >=0.6.2;
 
 interface IUniswapV2Router {
@@ -45,15 +29,7 @@ interface IUniswapV2Router {
     function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);
 }
 
-// File: contracts/Arb.sol
-
-
-
 pragma solidity >=0.6.6 <0.8.0;
-
-
-
-
 
 contract FlashloanArbitrage {
     address private _owner;
