@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.2 <0.8.0;
 
 interface IERC20 {
@@ -34,6 +34,9 @@ pragma solidity >=0.6.6 <0.8.0;
 contract FlashloanArbitrage {
     address private _owner;
 
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == _owner, "Caller not owner");
         _;
@@ -43,10 +46,17 @@ contract FlashloanArbitrage {
         _owner = msg.sender;
     }
 
+    /**
+     * @dev Returns the address of the current owner.
+     */
     function owner() public view returns (address) {
         return _owner;
     }
 
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Cannot be zero addr");
         _owner = newOwner;
@@ -90,34 +100,34 @@ contract FlashloanArbitrage {
         address token0 = IUniswapV2Pair(msg.sender).token0();
         address token1 = IUniswapV2Pair(msg.sender).token1();
 
+        address[] memory path0 = new address[](2);
         address[] memory path1 = new address[](2);
-        address[] memory path = new address[](2);
-
+        
         // Sell token having non-zero amount
-        path[0] = path1[1] = _amount0 == 0 ? token1 : token0; 
-        path[1] = path1[0] = _amount0 == 0 ? token0 : token1; 
+        path0[0] = path1[1] = _amount0 == 0 ? token1 : token0; 
+        path0[1] = path1[0] = _amount0 == 0 ? token0 : token1; 
 
         (address sourceRouter, address targetRouter) = abi.decode(_data, (address, address));
         require(sourceRouter != address(0) && targetRouter != address(0), 'Router not set');
 
-        IERC20 token = IERC20(_amount0 == 0 ? token1 : token0); // token to be sold
-        token.approve(targetRouter, amountBorrowed);
+        IERC20 borrowedToken = IERC20(_amount0 == 0 ? token1 : token0); // token to be sold
+        borrowedToken.approve(targetRouter, amountBorrowed);
 
         uint256 amountRequired = IUniswapV2Router(sourceRouter).getAmountsIn(amountBorrowed, path1)[0]; // amount to reimburse
         uint256 amountReceived = IUniswapV2Router(targetRouter).swapExactTokensForTokens(
             amountBorrowed,
             amountRequired, 
-            path,
+            path0,
             address(this),
             block.timestamp + 60
         )[1];
 
         require(amountReceived > amountRequired, 'Insufficient tokens');
 
-        IERC20 otherToken = IERC20(_amount0 == 0 ? token0 : token1);
+        IERC20 payoutToken = IERC20(_amount0 == 0 ? token0 : token1);
 
-        otherToken.transfer(msg.sender, amountRequired); // reimburse
-        otherToken.transfer(owner(), amountReceived - amountRequired); // transfer profit to owner
+        payoutToken.transfer(msg.sender, amountRequired); // reimburse
+        payoutToken.transfer(owner(), amountReceived - amountRequired); // transfer profit to owner
     }
     
     function pancakeCall(address _sender, uint256 _amount0, uint256 _amount1, bytes calldata _data) external {
