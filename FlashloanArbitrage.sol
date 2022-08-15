@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity >=0.6.2 <0.8.0;
 
 interface IERC20 {
@@ -62,13 +63,15 @@ contract FlashloanArbitrage {
         _owner = newOwner;
     }
 
-    /// @notice Start arbitrage
-    /// @param amount0 amount of tokens to borrow
-    /// @param token0 address of token to be borrowed
-    /// @param token1 address of token to receive profits in
-    /// @param sourceRouter source router address
-    /// @param targetRouter target router address
-    /// @param sourceFactory source factory address
+    /**
+     * @notice Take a flashloan and execute arbitrage
+     * @param amount0 amount of tokens to borrow
+     * @param token0 address of token to be borrowed
+     * @param token1 address of token to receive profits in
+     * @param sourceRouter source router address
+     * @param targetRouter target router address
+     * @param sourceFactory source factory address
+     */
     function initArbitrage(
         uint256 amount0,
         address token0, 
@@ -77,7 +80,7 @@ contract FlashloanArbitrage {
         address targetRouter,
         address sourceFactory
     ) external onlyOwner {
-        require(amount0 > 0, "Incorrect borrow amount");
+        require(amount0 > 0, "Invalid borrow amount");
         address pairAddress = IUniswapV2Factory(sourceFactory).getPair(token0, token1);
         require(pairAddress != address(0), 'Pair not found');
 
@@ -95,7 +98,7 @@ contract FlashloanArbitrage {
         uint256 _amount1, 
         bytes calldata _data
     ) internal {
-        uint256 amountBorrowed = _amount0 == 0 ? _amount1 : _amount0;
+        uint256 amountLoaned = _amount0 == 0 ? _amount1 : _amount0;
 
         address token0 = IUniswapV2Pair(msg.sender).token0();
         address token1 = IUniswapV2Pair(msg.sender).token1();
@@ -110,12 +113,12 @@ contract FlashloanArbitrage {
         (address sourceRouter, address targetRouter) = abi.decode(_data, (address, address));
         require(sourceRouter != address(0) && targetRouter != address(0), 'Router not set');
 
-        IERC20 borrowedToken = IERC20(_amount0 == 0 ? token1 : token0); // token to be sold
-        borrowedToken.approve(targetRouter, amountBorrowed);
+        IERC20 loanToken = IERC20(_amount0 == 0 ? token1 : token0); // token to be sold
+        loanToken.approve(targetRouter, amountLoaned);
 
-        uint256 amountRequired = IUniswapV2Router(sourceRouter).getAmountsIn(amountBorrowed, path1)[0]; // amount to reimburse
+        uint256 amountRequired = IUniswapV2Router(sourceRouter).getAmountsIn(amountLoaned, path1)[0]; // amount to reimburse
         uint256 amountReceived = IUniswapV2Router(targetRouter).swapExactTokensForTokens(
-            amountBorrowed,
+            amountLoaned,
             amountRequired, 
             path0,
             address(this),
